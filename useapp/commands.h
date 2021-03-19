@@ -1,0 +1,8 @@
+#ifndef __COMMANDS__
+#define __COMMANDS__
+
+#define LCD_NEW_LINE			0b11000000
+#define LCD_CLEAR_DISPLAY		0b00000001
+#define LCD_CLEAR_RETURN_HOME		0b00000011
+
+#endif /* __COMMANDS__ */
