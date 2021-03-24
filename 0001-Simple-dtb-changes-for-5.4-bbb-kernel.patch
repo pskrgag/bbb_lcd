@@ -1,83 +1,36 @@
-From 7e934783ea25cdd0b46472566574f94c26f858f0 Mon Sep 17 00:00:00 2001
+From a9dd8ee6fdd40b5aabe5d618591208ca49c42608 Mon Sep 17 00:00:00 2001
 From: Pavel Skripkin <paskripkin@gmail.com>
 Date: Sat, 20 Mar 2021 01:02:00 +0300
 Subject: [PATCH] Simple dtb changes for 5.4 bbb kernel
 
 Signed-off-by: Pavel Skripkin <paskripkin@gmail.com>
 ---
- arch/arm/boot/dts/am335x-bone-common.dtsi    |  2 +
- arch/arm/boot/dts/am335x-boneblack-gpio.dtsi | 62 ++++++++++++++++++++
+ arch/arm/boot/dts/am335x-boneblack-gpio.dtsi | 36 ++++++++++++++++++++
  arch/arm/boot/dts/am335x-boneblack.dts       |  1 +
- 3 files changed, 65 insertions(+)
+ 2 files changed, 37 insertions(+)
  create mode 100644 arch/arm/boot/dts/am335x-boneblack-gpio.dtsi
 
-diff --git a/arch/arm/boot/dts/am335x-bone-common.dtsi b/arch/arm/boot/dts/am335x-bone-common.dtsi
-index 3f3f88575498..407c4a49583d 100644
---- a/arch/arm/boot/dts/am335x-bone-common.dtsi
-+++ b/arch/arm/boot/dts/am335x-bone-common.dtsi
-@@ -25,6 +25,7 @@
- 
- 		compatible = "gpio-leds";
- 
-+		/*
- 		led2 {
- 			label = "beaglebone:green:usr0";
- 			gpios = <&gpio1 21 GPIO_ACTIVE_HIGH>;
-@@ -38,6 +39,7 @@
- 			linux,default-trigger = "mmc0";
- 			default-state = "off";
- 		};
-+		*/
- 
- 		led4 {
- 			label = "beaglebone:green:usr2";
 diff --git a/arch/arm/boot/dts/am335x-boneblack-gpio.dtsi b/arch/arm/boot/dts/am335x-boneblack-gpio.dtsi
 new file mode 100644
-index 000000000000..755cbfed4eb6
+index 000000000000..0ce2a5682959
 --- /dev/null
 +++ b/arch/arm/boot/dts/am335x-boneblack-gpio.dtsi
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,36 @@
 +
 +/ {
-+	gpio_devs {
-+		compatible = "pskr,gpio-test";
++	lcd_display {
++		compatible = "pskr,lcd";
 +		pinctrl-names = "default";
 +		pinctrl-0 = <&lcd_gpios>;
 +
-+		lcd_gpio1 {
-+			label = "gpio2.6";
-+			lcd-gpios = <&gpio2 6 GPIO_ACTIVE_HIGH>;
-+		};
++		rs-gpio   = <&gpio2 6 GPIO_ACTIVE_HIGH>;
++		rw-gpio   = <&gpio2 7 GPIO_ACTIVE_HIGH>;
++		e-gpio    = <&gpio2 8 GPIO_ACTIVE_HIGH>;
 +
-+		lcd_gpio2 {
-+			label = "gpio2.7";
-+			lcd-gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
-+		};
-+
-+		lcd_gpio3 {
-+			label = "gpio2.8";
-+			lcd-gpios = <&gpio2 8 GPIO_ACTIVE_HIGH>;
-+		};
-+
-+		lcd_gpio4 {
-+			label = "gpio2.9";
-+			lcd-gpios = <&gpio2 9 GPIO_ACTIVE_HIGH>;
-+		};
-+
-+		lcd_gpio5 {
-+			label = "gpio2.10";
-+			lcd-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
-+		};
-+
-+		lcd_gpio6 {
-+			label = "gpio2.11";
-+			lcd-gpios = <&gpio2 11 GPIO_ACTIVE_HIGH>;
-+		};
-+
-+		lcd_gpio7 {
-+			label = "gpio2.12";
-+			lcd-gpios = <&gpio2 12 GPIO_ACTIVE_HIGH>;
-+		};
++		dt1-gpio  = <&gpio2 9 GPIO_ACTIVE_HIGH>;
++		dt2-gpio  = <&gpio2 10 GPIO_ACTIVE_HIGH>;
++		dt3-gpio  = <&gpio2 11 GPIO_ACTIVE_HIGH>;
++		dt4-gpio  = <&gpio2 12 GPIO_ACTIVE_HIGH>;
 +	};
 +};
 +
@@ -112,5 +65,5 @@ index 40b17b956109..fef64f0a2006 100644
  
  / {
 -- 
-2.25.1
+2.30.2
 
