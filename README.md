@@ -1,5 +1,5 @@
 # bbb_lcd
-LCD driver for beaglebone black + user app
+LCD platform driver for beaglebone black
 
 Driver exports sysfs interface to `/sys/class/lcd/lcd16x2`
 
