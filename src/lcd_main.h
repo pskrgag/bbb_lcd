@@ -22,8 +22,6 @@ unsigned char lcd_get_coords(struct lcd_data *lcd);
 
 size_t lcd_print_cmds(char *buf);
 
-void lcd_clear_display(struct lcd_data *lcd);
-
 int lcd_proccess_cmd(const char *cmd, struct lcd_data *lcd);
 
 #endif /* __LCD_MAIN__ */

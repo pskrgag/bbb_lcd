@@ -17,17 +17,29 @@
 #define LCD_FUNCTION_SET_4_BIT			0b0010
 #define LCD_SETUP_DISPLAY(DL, N, F)		(0b00100000 | ((DL) << 4) | ((N) << 3) | ((F) << 2))
 #define LCD_ENTRY_MODE_SET(ID, S)		(0b00000100 | ((ID) << 1) | ((S) << 0))
+#define LCD_CURSOR_OR_DISPLAY_SHIFT(SC, RL)	(0b00010000 | ((SC) << 3) | ((RL) << 2))
 
 #define MATRIX_POS_TO_LCD(x, y)			((x) << 6 | y)
+
+#define SAVE_REGISTERS_LOCK(lcd)			\
+	int __rs__, __rw__;				\
+	__rs__ = gpiod_get_value((lcd)->gpio_rs);	\
+	__rw__ = gpiod_get_value((lcd)->gpio_rw);	\
+	spin_lock(&(lcd)->lock);
+
+#define RESTORE_REGISTERS_UNLOCK(lcd)				\
+	gpiod_set_value((lcd)->gpio_rs, __rs__);		\
+	gpiod_set_value((lcd)->gpio_rw, __rw__);		\
+	spin_unlock(&(lcd)->lock);
 
 #define SAVE_REGISTERS(lcd)				\
 	int __rs__, __rw__;				\
 	__rs__ = gpiod_get_value((lcd)->gpio_rs);	\
 	__rw__ = gpiod_get_value((lcd)->gpio_rw);
 
-#define RESTORE_REGISTERS(lcd)				\
-	gpiod_set_value((lcd)->gpio_rs, __rs__);	\
-	gpiod_set_value((lcd)->gpio_rw, __rw__);
+#define RESTORE_REGISTERS(lcd)					\
+	gpiod_set_value((lcd)->gpio_rs, __rs__);		\
+	gpiod_set_value((lcd)->gpio_rw, __rw__);		\
 
 #define DEFINE_CMD(_cmd, _descr, _handler)	\
 {						\

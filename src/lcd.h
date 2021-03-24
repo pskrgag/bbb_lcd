@@ -3,6 +3,7 @@
 
 #include <linux/gpio/consumer.h>
 #include <linux/delay.h>
+#include <linux/spinlock.h>
 
 #define OF_DEVICE_ID(str, _data)	{ .compatible = (str), .data = (void *) (_data) }
 #define END_OF_LIST			{ }
@@ -21,6 +22,7 @@ struct gpiodrv_data {
 };
 
 struct lcd_data {
+	struct spinlock lock;
 	struct gpio_desc *gpio_rs;
 	struct gpio_desc *gpio_rw;
 	struct gpio_desc *gpio_e;

@@ -90,7 +90,8 @@ static int gpio_probe(struct platform_device *dev)
 	}
 
 	lcd_init(lcd_data);
-	lcd_print_msg(lcd_data, "Hello");
+	lcd_print_msg(lcd_data, "Initialized!");
+	spin_lock_init(&lcd_data->lock);
 
 	return 0;
 }

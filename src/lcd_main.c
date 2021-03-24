@@ -4,6 +4,8 @@
 
 #include <linux/string.h>
 
+static void lcd_clear_display(struct lcd_data *lcd);
+
 static struct lcd_cmd lcd_cmds[] = {
 	DEFINE_CMD("clear", "clears screen", lcd_clear_display),
 };
@@ -18,18 +20,21 @@ static unsigned char current_line;
 static unsigned char current_pos;
 
 static void lcd_set_to_write(struct lcd_data *lcd)
+__must_hold(&lcd->lock)
 {
 	gpiod_set_value(lcd->gpio_rs, 1);
 	gpiod_set_value(lcd->gpio_rw, 0);
 }
 
 static void lcd_set_to_command(struct lcd_data *lcd)
+__must_hold(&lcd->lock)
 {
 	gpiod_set_value_cansleep(lcd->gpio_rs, 0);
 	gpiod_set_value_cansleep(lcd->gpio_rw, 0);
 }
 
 static inline void lcd_new_line(struct lcd_data *lcd)
+__must_hold(&lcd->lock)
 {
 	SAVE_REGISTERS(lcd);
 
@@ -40,31 +45,23 @@ static inline void lcd_new_line(struct lcd_data *lcd)
 	RESTORE_REGISTERS(lcd);
 }
 
-void lcd_clear_display(struct lcd_data *lcd)
+static void lcd_clear_display(struct lcd_data *lcd)
 {
-	SAVE_REGISTERS(lcd);
+	SAVE_REGISTERS_LOCK(lcd);
 
 	lcd_set_to_command(lcd);
 	gpio_set_8bit(lcd, LCD_CLEAR_DISPLAY);
 	mdelay(2);
 
-	RESTORE_REGISTERS(lcd);
-}
+	current_pos = 0;
+	current_line = 0;
 
-void lcd_cursor_home(struct lcd_data *lcd)
-{
-	SAVE_REGISTERS(lcd);
-
-	lcd_set_to_command(lcd);
-	gpio_set_8bit(lcd, LCD_CURSOR_HOME);
-	mdelay(2);
-
-	RESTORE_REGISTERS(lcd);
+	RESTORE_REGISTERS_UNLOCK(lcd);
 }
 
 void lcd_set_ddram_addr(struct lcd_data *lcd, unsigned char x, unsigned char y)
 {
-	SAVE_REGISTERS(lcd);
+	SAVE_REGISTERS_LOCK(lcd);
 
 	current_pos  = y;
 	current_line = x;
@@ -73,7 +70,7 @@ void lcd_set_ddram_addr(struct lcd_data *lcd, unsigned char x, unsigned char y)
 	gpio_set_8bit(lcd, LCD_SET_DDRAM_POS(MATRIX_POS_TO_LCD(x, y)));
 	udelay(50);
 
-	RESTORE_REGISTERS(lcd);
+	RESTORE_REGISTERS_UNLOCK(lcd);
 }
 
 void lcd_init(struct lcd_data *lcd)
@@ -114,17 +111,32 @@ int lcd_print_msg(struct lcd_data *lcd, const char *msg)
 {
 	size_t i;
 
+	spin_lock(&lcd->lock);
+
 	lcd_set_to_write(lcd);
 
 	for (i = 0; i < strlen(msg); ++i) {
 		gpio_set_8bit(lcd, msg[i]);
 
 		if (++current_pos >= MAX_COLUMNS) {
-			lcd_new_line(lcd);
+			switch (current_line) {
+			case 0:
+				lcd_new_line(lcd);
+				break;
+			case 1:
+				gpio_set_8bit(lcd, LCD_CURSOR_OR_DISPLAY_SHIFT(1, 1));
+				udelay(60);
+				break;
+			default:
+				WARN_ON(1);
+			}
+
 			current_pos = 0;
 			current_line ^= 0x1;
 		}
 	}
+
+	spin_unlock(&lcd->lock);
 
 	return 0;
 }
@@ -133,8 +145,12 @@ unsigned char lcd_get_coords(struct lcd_data *lcd)
 {
 	unsigned char coords = 0;
 
+	spin_lock(&lcd->lock);
+
 	COORDS_SET_X(coords, current_line);
 	COORDS_SET_Y(coords, current_pos);
+
+	spin_unlock(&lcd->lock);
 
 	return coords;
 }

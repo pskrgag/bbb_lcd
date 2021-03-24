@@ -26,6 +26,7 @@ static const struct modversion_info ____versions[]
 __used __section(__versions) = {
 	{ 0xc5a83b3a, "module_layout" },
 	{ 0x5a47296f, "gpiod_direction_output" },
+	{ 0x12585e08, "_raw_spin_unlock" },
 	{ 0x97255bdf, "strlen" },
 	{ 0xd68404ca, "devm_gpiod_get" },
 	{ 0xb1ad28e0, "__gnu_mcount_nc" },
@@ -39,7 +40,9 @@ __used __section(__versions) = {
 	{ 0xde8f960a, "_dev_err" },
 	{ 0x3d938fd, "_dev_info" },
 	{ 0xdecd0b29, "__stack_chk_fail" },
+	{ 0xdb9ca3c5, "_raw_spin_lock" },
 	{ 0x7bb82ada, "gpiod_get_value" },
+	{ 0x2cfde9a2, "warn_slowpath_fmt" },
 	{ 0x37a0cba, "kfree" },
 	{ 0x6e68b940, "class_destroy" },
 	{ 0xaa2fcb25, "gpiod_set_value_cansleep" },
