@@ -11,8 +11,8 @@ static void lcd_clear_display(struct lcd_data *lcd, void *dt);
 static void lcd_to_clock(struct lcd_data *lcd, void *dt);
 
 static struct lcd_cmd lcd_cmds[] = {
-	DEFINE_CMD("clear", "clears screen",		   lcd_clear_display),
-	DEFINE_CMD("time",  "turns lcd into analog clock", lcd_to_clock),
+	DEFINE_CMD("clear", "clears screen",		    lcd_clear_display),
+	DEFINE_CMD("time",  "turns lcd into digital clock", lcd_to_clock),
 };
 
 #define CURRENT_IN			1
