@@ -1,13 +1,18 @@
 #include "lcd_main.h"
 #include "lcd_private.h"
 #include "gpio.h"
+#include "lcd_threads.h"
 
 #include <linux/string.h>
+#include <linux/kthread.h>
+#include <linux/time.h>
 
-static void lcd_clear_display(struct lcd_data *lcd);
+static void lcd_clear_display(struct lcd_data *lcd, void *dt);
+static void lcd_to_clock(struct lcd_data *lcd, void *dt);
 
 static struct lcd_cmd lcd_cmds[] = {
-	DEFINE_CMD("clear", "clears screen", lcd_clear_display),
+	DEFINE_CMD("clear", "clears screen",		   lcd_clear_display),
+	DEFINE_CMD("time",  "turns lcd into analog clock", lcd_to_clock),
 };
 
 #define CURRENT_IN			1
@@ -45,9 +50,51 @@ __must_hold(&lcd->lock)
 	RESTORE_REGISTERS(lcd);
 }
 
-static void lcd_clear_display(struct lcd_data *lcd)
+static inline void lcd_stop_thread_and_clear(struct lcd_data *lcd)
 {
+	if (lcd_stop_thread())
+		lcd_clear_display(lcd, (void *) 1);
+}
+
+static int lcd_clock_thread(void *lcd)
+{
+	struct timespec time;
+	char current_time[9];
+
+	lcd_clear_display(lcd, (void *) 0);
+
+	while (!kthread_should_stop()) {
+		lcd_set_ddram_addr(lcd, 0, 0);
+
+		getnstimeofday(&time);
+		sprintf(current_time, "%.2lu:%.2lu:%.2lu",
+				      (time.tv_sec / 3600) % (24),
+				      (time.tv_sec / 60) % (60),
+				      time.tv_sec % 60);
+
+		lcd_print_msg(lcd, current_time, 0);
+		ssleep(1);
+	}
+
+	return 0;
+}
+
+static void lcd_to_clock(struct lcd_data *lcd, void *dt)
+{
+	mutex_lock(&lcd->lock);
+	
+	lcd_start_thread(lcd, lcd_clock_thread);
+	
+	mutex_unlock(&lcd->lock);
+}
+
+static void lcd_clear_display(struct lcd_data *lcd, void *dt)
+{
+	bool user = (bool) dt;
 	SAVE_REGISTERS_LOCK(lcd);
+
+	if (user)
+		lcd_stop_thread();
 
 	lcd_set_to_command(lcd);
 	gpio_set_8bit(lcd, LCD_CLEAR_DISPLAY);
@@ -107,11 +154,14 @@ void lcd_init(struct lcd_data *lcd)
 	lcd_set_to_write(lcd);
 }
 
-int lcd_print_msg(struct lcd_data *lcd, const char *msg)
+int lcd_print_msg(struct lcd_data *lcd, const char *msg, bool user)
 {
 	size_t i;
 
-	spin_lock(&lcd->lock);
+	if (user)
+		lcd_stop_thread_and_clear(lcd);
+
+	mutex_lock(&lcd->lock);
 
 	lcd_set_to_write(lcd);
 
@@ -136,7 +186,7 @@ int lcd_print_msg(struct lcd_data *lcd, const char *msg)
 		}
 	}
 
-	spin_unlock(&lcd->lock);
+	mutex_unlock(&lcd->lock);
 
 	return 0;
 }
@@ -145,12 +195,12 @@ unsigned char lcd_get_coords(struct lcd_data *lcd)
 {
 	unsigned char coords = 0;
 
-	spin_lock(&lcd->lock);
+	mutex_lock(&lcd->lock);
 
 	COORDS_SET_X(coords, current_line);
 	COORDS_SET_Y(coords, current_pos);
 
-	spin_unlock(&lcd->lock);
+	mutex_unlock(&lcd->lock);
 
 	return coords;
 }
@@ -174,7 +224,7 @@ int lcd_proccess_cmd(const char *cmd, struct lcd_data *lcd)
 
 	for (i = 0; i < ARRAY_SIZE(lcd_cmds); ++i) {
 		if (sysfs_streq(cmd, lcd_cmds[i].cmd)) {
-			lcd_cmds[i].handler(lcd);
+			lcd_cmds[i].handler(lcd, (void *) 1);
 			return 0;
 		}
 	}

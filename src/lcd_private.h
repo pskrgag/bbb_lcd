@@ -25,12 +25,12 @@
 	int __rs__, __rw__;				\
 	__rs__ = gpiod_get_value((lcd)->gpio_rs);	\
 	__rw__ = gpiod_get_value((lcd)->gpio_rw);	\
-	spin_lock(&(lcd)->lock);
+	mutex_lock(&(lcd)->lock);
 
 #define RESTORE_REGISTERS_UNLOCK(lcd)				\
 	gpiod_set_value((lcd)->gpio_rs, __rs__);		\
 	gpiod_set_value((lcd)->gpio_rw, __rw__);		\
-	spin_unlock(&(lcd)->lock);
+	mutex_unlock(&(lcd)->lock);
 
 #define SAVE_REGISTERS(lcd)				\
 	int __rs__, __rw__;				\
@@ -40,6 +40,14 @@
 #define RESTORE_REGISTERS(lcd)					\
 	gpiod_set_value((lcd)->gpio_rs, __rs__);		\
 	gpiod_set_value((lcd)->gpio_rw, __rw__);		\
+
+typedef void (*lcd_cmd_handler_t)(struct lcd_data *, void *);
+
+struct lcd_cmd {
+	const char *cmd;
+	const char *descr;
+	lcd_cmd_handler_t handler;
+};
 
 #define DEFINE_CMD(_cmd, _descr, _handler)	\
 {						\

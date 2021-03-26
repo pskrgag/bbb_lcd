@@ -9,6 +9,7 @@
 
 #include "lcd.h"
 #include "lcd_main.h"
+#include "lcd_threads.h"
 
 static int gpio_probe(struct platform_device *);
 static int gpio_remove(struct platform_device *);
@@ -89,15 +90,16 @@ static int gpio_probe(struct platform_device *dev)
 		return -2;
 	}
 
+	mutex_init(&lcd_data->lock);
 	lcd_init(lcd_data);
-	lcd_print_msg(lcd_data, "Initialized!");
-	spin_lock_init(&lcd_data->lock);
+	lcd_print_msg(lcd_data, "Initialized!", 0);
 
 	return 0;
 }
 
 static int gpio_remove(struct platform_device *dev)
 {
+	lcd_stop_thread();
 	device_unregister(driver_data.lcd_dev);
 	return 0;
 }
@@ -117,7 +119,7 @@ static ssize_t lcdtext_store(struct device *dev, struct device_attribute *attr,
 
 	user_msg[str_len - 1] == '\n'? user_msg[str_len - 1] = 0: (void) 0;
 
-	lcd_print_msg(lcd, user_msg);
+	lcd_print_msg(lcd, user_msg, 1);
 
 	kfree(user_msg);
 	return count;
