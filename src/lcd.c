@@ -80,8 +80,6 @@ static int gpio_probe(struct platform_device *dev)
 	GET_GPIOD_WITH_CHECK(lcd_data, dev, dt3);
 	GET_GPIOD_WITH_CHECK(lcd_data, dev, dt4);
 
-	dev_info(&dev->dev, "All stuff is accupied\n");
-
 	driver_data.lcd_dev = device_create_with_groups(driver_data.class, &dev->dev, 0, lcd_data,
 					   (const struct attribute_group **) &attr_groups,
 					   "lcd16x2");
